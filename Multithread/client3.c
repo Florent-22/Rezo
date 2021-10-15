@@ -27,6 +27,10 @@ void * doRecieving(void * sockID){
 int main(){
 
 	int clientSocket = socket(PF_INET, SOCK_STREAM, 0);
+	printf("Username: ");
+	char clientName[1024];
+	scanf("%s",clientName);
+	printf("Welcom %s", clientName);
 
 	struct sockaddr_in serverAddr;
 
@@ -36,7 +40,7 @@ int main(){
 
 	if(connect(clientSocket, (struct sockaddr*) &serverAddr, sizeof(serverAddr)) == -1) return 0;
 
-	printf("Connection established ............\n");
+	printf("Connection established !\n");
 
 	pthread_t thread;
 	pthread_create(&thread, NULL, doRecieving, (void *) &clientSocket );
