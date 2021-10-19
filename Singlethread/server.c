@@ -3,7 +3,7 @@ Serveur à lancer avant le client
 ------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
-#include <linux/types.h> 	/* pour les sockets */
+#include "my_linux_types.h" 	/* pour les sockets */
 #include <sys/socket.h>
 #include <netdb.h> 		/* pour hostent, servent */
 #include <string.h> 		/* pour bcopy, ... */  
