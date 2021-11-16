@@ -24,13 +24,17 @@ void * doRecieving(void * sockID){
 
 }
 
+void displayChannels(){
+	
+}
+
 int main(){
 
 	int clientSocket = socket(PF_INET, SOCK_STREAM, 0);
 	printf("Username: ");
 	char clientName[1024];
 	scanf("%s",clientName);
-	printf("Welcom %s", clientName);
+	printf("Welcome %s \n", clientName);
 
 	struct sockaddr_in serverAddr;
 
@@ -49,6 +53,10 @@ int main(){
 
 		char input[1024];
 		scanf("%s",input);
+
+		if(strcmp(input, "CHANNELS") == 0){
+			send(clientSocket,input,1024,0);
+		}
 
 		if(strcmp(input,"LIST") == 0){
 
