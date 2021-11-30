@@ -25,11 +25,11 @@ int main(int argc, char **argv)
     hostent *ptr_host;          /* info sur une machine hote */
     servent *ptr_service;       /* info sur service */
     char buffer[256];
-    char *prog;   /* nom du programme */
     char *host;   /* nom de la machine distante */
-    char *mesg;   /* message envoyé */
+    char mesg[256];   /* message envoyé */
     char *pseudo; /* identifiant de l'utilisateur */
-    bool stop;    /* deconnexion du client */
+    char wholeMsg[512]; /* le message complet avec le pseudo */
+    bool stop = false;    /* deconnexion du client */
 
     if (argc != 3)
     {
@@ -37,17 +37,12 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    prog = argv[0];
     host = argv[1];
     pseudo = argv[2];
 
-    printf("nom de l'executable : %s \n", prog);
     printf("adresse du serveur  : %s \n", host);
     printf("pseudo envoye       : %s \n", pseudo);
 
-    stop = false;
-
-    /*mesg = strcat(pseudo,mesgtemp);*/
 
     if ((ptr_host = gethostbyname(host)) == NULL)
     {
@@ -100,6 +95,8 @@ int main(int argc, char **argv)
 
     do
     {
+        memset(wholeMsg, 0, 512);
+        memset(mesg, 0, 256);
 
         printf("Nouveau message : \n");
         scanf("%s", mesg);
@@ -113,13 +110,15 @@ int main(int argc, char **argv)
         {
             stop = true;
         }
-
-        mesg = strcat(pseudo, mesg);
+        
+        strcpy(wholeMsg, pseudo);
+        strcat(wholeMsg, " : "); 
+        strcat(wholeMsg, mesg);
 
         printf("envoi d'un message au serveur. \n");
 
         /* envoi du message vers le serveur */
-        if ((write(socket_descriptor, mesg, strlen(mesg))) < 0)
+        if ((write(socket_descriptor, wholeMsg, strlen(wholeMsg))) < 0)
         {
             perror("erreur : impossible d'ecrire le message destine au serveur.");
             exit(1);

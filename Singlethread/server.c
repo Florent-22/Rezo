@@ -26,6 +26,8 @@ void renvoi (int sock) {
     
     printf("message lu : %s \n", buffer);
     
+    //modifier ça 
+    
     buffer[0] = 'R';
     buffer[1] = 'E';
     buffer[longueur] = '#';

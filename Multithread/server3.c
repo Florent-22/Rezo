@@ -8,6 +8,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#define foreach(item, array) \
+    for(int keep = 1, \
+            count = 0,\
+            size = sizeof (array) / sizeof *(array); \
+        keep && count != size; \
+        keep = !keep, count++) \
+      for(item = (array) + count; keep; keep = !keep)
 
 int clientCount = 0;
 
@@ -29,7 +36,7 @@ struct Client
 	int index;
 	int sockID;
 	struct sockaddr_in clientAddr;
-	int channel;
+	int *channel;
 	int len;
 };
 
@@ -46,7 +53,7 @@ int nbChannels = 3;
 Client client[1024];
 pthread_t thread[1024];
 
-Arg_thread arg_thread = {&listChannels, NULL, &nbChannels};
+Arg_thread arg_thread = {listChannels, NULL, &nbChannels};
 
 void initiateChannel(Channel list[])
 {
@@ -58,20 +65,16 @@ void initiateChannel(Channel list[])
 	strcpy(list[2].name, "Gossip");
 }
 
-void createChannel(Channel list[], char *n, int i)
-{
-	strcpy(list[i].name, n);
-}
 
 void *doNetworking(void *arg_thread)
 {
 	Arg_thread *arg = (Arg_thread *)arg_thread;
 	Client *clientDetail = (Client *)arg->Client;
 	Channel *listC = arg->listChannels;
-	int nbChannels = *(arg->nbChannels);
+	int* nbChannels = arg->nbChannels;
 	int index = clientDetail->index;
 	int clientSocket = clientDetail->sockID;
-	int channel = clientDetail->channel;
+	int* channel = clientDetail->channel;
 
 	printf("Client %d connected.\n", index + 1);
 
@@ -90,7 +93,7 @@ void *doNetworking(void *arg_thread)
 			
 			int l = 0;
 
-			for (int i = 0; i < nbChannels; i++)
+			for (int i = 0; i < *nbChannels; i++)
 			{
 
 				l += snprintf(output + l, 1024, "Channel %d - %s.\n", listC[i].id, listC[i].name);
@@ -105,11 +108,11 @@ void *doNetworking(void *arg_thread)
 		{
 
 			read = recv(clientSocket, data, 1024, 0);
-			data[read] = '\0'; // le nom du futur chennel est dans data
+			data[read] = '\0'; // le nom du futur channel est dans data
 			//Creation of the new channel
-			listC[nbChannels].id = nbChannels;
-			strcpy(listC[nbChannels].name, data+1);
-			nbChannels ++;
+			listC[*nbChannels].id = *nbChannels;
+			strcpy(listC[*nbChannels].name, data+1);
+			*nbChannels = *nbChannels + 1;
 
 			snprintf(output, 1024, "Your channel \"%s\" is created.\n", data);
 			
@@ -122,10 +125,11 @@ void *doNetworking(void *arg_thread)
 		{
 			read = recv(clientSocket, data, 1024, 0);
 			data[read] = '\0';
-			int idC = atoi(data) - 1;
-			channel = idC;
+			int idC = atoi(data);
+			*channel = idC;
 
-			snprintf(output, 1024, "You joined channel n° \"%d\" is created.\n", idC);
+			//snprintf(output, 1024, "You joined channel n° \"%d\".\n", idC);
+			snprintf(output, 1024, "You joined channel n° \"%d\".\n", *channel);
 			
 			send(clientSocket, output, 1024, 0);
 			continue;
@@ -148,19 +152,26 @@ void *doNetworking(void *arg_thread)
 		}
 		if (strcmp(data, "SEND") == 0)
 		{
-			if(channel == NULL){
+			if(*channel == -1){
 				snprintf(output, 1024, "You are not in a channel.\n");
 				send(clientSocket, output, 1024, 0);
 			} else {
+				//read = recv(clientSocket, data, 1024, 0);
+				//data[read] = '\0';
+
+				//int id = atoi(data) - 1;
+
 				read = recv(clientSocket, data, 1024, 0);
 				data[read] = '\0';
+				
+				snprintf(output, 1024, "%d - TEST: %s.\n", data, read);
+				send(clientSocket, output, 1024, 0);
 
-				int id = atoi(data) - 1;
-
-				read = recv(clientSocket, data, 1024, 0);
-				data[read] = '\0';
-
-				send(client[id].sockID, data, 1024, 0);
+				for (int i; i < clientCount; i++){
+					if(*(client[i].channel) == *channel && i != index){
+						send(client[i].sockID, data, 1024, 0); // au bout de la 3eme fois (ou d'un laps de temps), rien ne s'envoie
+					}
+				}
 			}
 
 			
@@ -195,6 +206,8 @@ int main()
 		
 		client[clientCount].sockID = accept(serverSocket, (struct sockaddr *)&client[clientCount].clientAddr, &client[clientCount].len);
 		client[clientCount].index = clientCount;
+		client[clientCount].channel = (int*) malloc( sizeof(int) );
+		*(client[clientCount].channel) = -1;
 
 		arg_thread.Client = &client[clientCount];
 

@@ -31,6 +31,7 @@ int main(){
 	char clientName[1024];
 	scanf("%s",clientName);
 	printf("Welcome %s \n", clientName);
+	strcat(clientName, ":");
 
 	struct sockaddr_in serverAddr;
 
@@ -77,11 +78,12 @@ int main(){
 
 			send(clientSocket,input,1024,0);
 			
-			scanf("%s",input);
-			send(clientSocket,input,1024,0);
-			
 			scanf("%[^\n]s",input);
-			send(clientSocket,input,1024,0);
+			char msg[1024];
+			strcpy(msg, clientName);
+			strcat(msg, input);
+			
+			send(clientSocket,msg,1024,0);
 
 		}
 
