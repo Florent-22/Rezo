@@ -29,6 +29,7 @@ struct Client
 	int index;
 	int sockID;
 	struct sockaddr_in clientAddr;
+	int channel;
 	int len;
 };
 
@@ -40,7 +41,7 @@ struct Arg_thread
 };
 
 Channel listChannels[10];
-int nbChannels = 1;
+int nbChannels = 3;
 
 Client client[1024];
 pthread_t thread[1024];
@@ -51,6 +52,10 @@ void initiateChannel(Channel list[])
 {
 	list[0].id = 0;
 	strcpy(list[0].name, "Main");
+	list[1].id = 1;
+	strcpy(list[1].name, "Gaming");
+	list[2].id = 2;
+	strcpy(list[2].name, "Gossip");
 }
 
 void createChannel(Channel list[], char *n, int i)
@@ -66,6 +71,7 @@ void *doNetworking(void *arg_thread)
 	int nbChannels = *(arg->nbChannels);
 	int index = clientDetail->index;
 	int clientSocket = clientDetail->sockID;
+	int channel = clientDetail->channel;
 
 	printf("Client %d connected.\n", index + 1);
 
@@ -83,7 +89,6 @@ void *doNetworking(void *arg_thread)
 		{
 			
 			int l = 0;
-			//l += snprintf(output + l, 1024, "%d : Channel %d - %s.\n", nbChannels, listC[0].id, listC[0].name);
 
 			for (int i = 0; i < nbChannels; i++)
 			{
@@ -96,15 +101,34 @@ void *doNetworking(void *arg_thread)
 		}
 
 		// Create channel
-		if (strcmp(data,"CREATE") == 0)
+		if (strcmp(data, "CREATE") == 0)
 		{
 
+			read = recv(clientSocket, data, 1024, 0);
+			data[read] = '\0'; // le nom du futur chennel est dans data
+			//Creation of the new channel
+			listC[nbChannels].id = nbChannels;
+			strcpy(listC[nbChannels].name, data+1);
+			nbChannels ++;
+
+			snprintf(output, 1024, "Your channel \"%s\" is created.\n", data);
+			
+			send(clientSocket, output, 1024, 0);
+			continue;
 		}
 
 		// Join un channel
 		if (strcmp(data, "JOIN") == 0)
 		{
+			read = recv(clientSocket, data, 1024, 0);
+			data[read] = '\0';
+			int idC = atoi(data) - 1;
+			channel = idC;
+
+			snprintf(output, 1024, "You joined channel n° \"%d\" is created.\n", idC);
 			
+			send(clientSocket, output, 1024, 0);
+			continue;
 		}
 
 		if (strcmp(data, "LIST") == 0)
@@ -124,16 +148,22 @@ void *doNetworking(void *arg_thread)
 		}
 		if (strcmp(data, "SEND") == 0)
 		{
+			if(channel == NULL){
+				snprintf(output, 1024, "You are not in a channel.\n");
+				send(clientSocket, output, 1024, 0);
+			} else {
+				read = recv(clientSocket, data, 1024, 0);
+				data[read] = '\0';
 
-			read = recv(clientSocket, data, 1024, 0);
-			data[read] = '\0';
+				int id = atoi(data) - 1;
 
-			int id = atoi(data) - 1;
+				read = recv(clientSocket, data, 1024, 0);
+				data[read] = '\0';
 
-			read = recv(clientSocket, data, 1024, 0);
-			data[read] = '\0';
+				send(client[id].sockID, data, 1024, 0);
+			}
 
-			send(client[id].sockID, data, 1024, 0);
+			
 		}
 	}
 

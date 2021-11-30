@@ -24,10 +24,6 @@ void * doRecieving(void * sockID){
 
 }
 
-void displayChannels(){
-	
-}
-
 int main(){
 
 	int clientSocket = socket(PF_INET, SOCK_STREAM, 0);
@@ -55,6 +51,20 @@ int main(){
 		scanf("%s",input);
 
 		if(strcmp(input, "CHANNELS") == 0){
+			send(clientSocket,input,1024,0);
+		}
+
+		if(strcmp(input, "CREATE") == 0){
+			send(clientSocket,input,1024,0);
+			
+			scanf("%[^\n]s",input);
+			send(clientSocket,input,1024,0);
+		}
+
+		if(strcmp(input, "JOIN") == 0){
+			send(clientSocket,input,1024,0);
+			
+			scanf("%[^\n]s",input);
 			send(clientSocket,input,1024,0);
 		}
 
